@@ -1,255 +1,319 @@
-# Node.js Demo App
+# Terraform Docker Infrastructure as Code (IaC) – DevOps Task 3
 
-### Automated CI/CD Pipeline with GitHub Actions and Docker
+## Project Overview
 
-A lightweight Node.js application demonstrating an automated **Test → Build → Publish** CI/CD workflow using GitHub Actions and Docker Hub.
+This project demonstrates Infrastructure as Code (IaC) using Terraform to provision and manage a local Docker container.
 
-[![CI/CD Pipeline](https://github.com/sakthi2300/nodejs-demo-app/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/sakthi2300/nodejs-demo-app/actions/workflows/main.yml)
-[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-Public%20Image-blue?logo=docker)](https://hub.docker.com/r/sakthi2300/nodejs-demo-app)
-[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js\&logoColor=white)](https://nodejs.org/)
+An existing Node.js Docker application image, `nodejs-demo-app:latest`, was reused. Terraform uses the Docker provider to create and manage the container.
 
-**Repository:** [GitHub](https://github.com/sakthi2300/nodejs-demo-app) | **Docker Image:** [Docker Hub](https://hub.docker.com/r/sakthi2300/nodejs-demo-app)
+## Objective
 
----
+- Use the Terraform Docker provider.
+- Provision a local Docker container.
+- Use `terraform init`, `terraform plan`, and `terraform apply`.
+- Verify Terraform state.
+- Test the application.
+- Destroy the infrastructure using `terraform destroy`.
 
-## Overview
+## Technologies Used
 
-This project demonstrates how to automate the testing, containerization, and publishing of a Node.js application using **GitHub Actions** and **Docker**.
+- Terraform 1.16.5
+- Docker 29.7.2
+- Docker Provider `kreuzwerker/docker` v3.9.0
+- Node.js 22
+- Express.js
+- Git and GitHub
 
-Whenever code is pushed to the `main` branch, GitHub Actions automatically executes the configured workflow to:
-
-* Check out the source code.
-* Set up Node.js 22.
-* Install dependencies using `npm ci`.
-* Run application tests.
-* Build a Docker image.
-* Authenticate securely with Docker Hub.
-* Publish the Docker image to Docker Hub.
-
-This project demonstrates the fundamentals of CI/CD automation and Docker-based application delivery.
-
-## CI/CD Workflow
+## Architecture
 
 ```text
-       Code Push to Main
-               |
-               v
-      GitHub Actions Runner
-               |
-               v
-      Checkout Source Code
-               |
-               v
-       Set Up Node.js 22
-               |
-               v
-     Install Dependencies
-           (npm ci)
-               |
-               v
-         Run Tests
-         (npm test)
-               |
-               v
-      Build Docker Image
-               |
-               v
-    Authenticate with Docker Hub
-        (GitHub Secrets)
-               |
-               v
-     Publish Image to Docker Hub
+Terraform
+    |
+    v
+Docker Provider
+    |
+    v
+nodejs-demo-app:latest
+    |
+    v
+terraform-nodejs-app
+    |
+    v
+Host port 3001 -> Container port 3000
+    |
+    v
+http://localhost:3001
 ```
 
-### Pipeline Stages
+## Project Structure
 
-| Stage    | Description                                                    |
-| -------- | -------------------------------------------------------------- |
-| Trigger  | Automatically starts when code is pushed to the `main` branch. |
-| Checkout | Retrieves the source code from GitHub.                         |
-| Setup    | Configures Node.js 22 on the GitHub-hosted runner.             |
-| Install  | Installs dependencies using `npm ci`.                          |
-| Test     | Executes the application tests using `npm test`.               |
-| Build    | Builds the Docker image using the project's Dockerfile.        |
-| Publish  | Authenticates securely and pushes the image to Docker Hub.     |
+```text
+terraform-docker-iac-task-3/
+|
+├── .github/
+│   └── workflows/
+│       └── main.yml
+├── .dockerignore
+├── .gitignore
+├── .terraform.lock.hcl
+├── Dockerfile
+├── main.tf
+├── package-lock.json
+├── package.json
+├── server.js
+└── README.md
+```
 
-## Technology Stack
+## Terraform Configuration
 
-| Technology     | Purpose                      |
-| -------------- | ---------------------------- |
-| Node.js 22     | JavaScript runtime           |
-| Express.js     | Web application framework    |
-| Docker         | Application containerization |
-| Git            | Version control              |
-| GitHub         | Source code hosting          |
-| GitHub Actions | CI/CD automation             |
-| Docker Hub     | Container image registry     |
+The `main.tf` file configures the Docker provider and creates the container.
 
-## Application Endpoints
+```hcl
+terraform {
+  required_providers {
+    docker = {
+      source  = "kreuzwerker/docker"
+      version = "~> 3.0"
+    }
+  }
+}
 
-| Method | Endpoint  | Response                           |
-| ------ | --------- | ---------------------------------- |
-| `GET`  | `/`       | `Hello! Node.js CI/CD is working.` |
-| `GET`  | `/health` | `{"status":"OK"}`                  |
+provider "docker" {
+}
 
-## Getting Started
+resource "docker_container" "nodejs_app" {
+  name  = "terraform-nodejs-app"
+  image = "nodejs-demo-app:latest"
 
-### Prerequisites
+  ports {
+    internal = 3000
+    external = 3001
+  }
+}
+```
 
-Ensure the following tools are installed:
+## Execution
 
-* Node.js 22 and npm
-* Git
-* Docker (for container-based execution)
-
-### 1. Clone the Repository
+### 1. Initialize Terraform
 
 ```bash
-git clone https://github.com/sakthi2300/nodejs-demo-app.git
-cd nodejs-demo-app
+terraform init
 ```
 
-### 2. Install Dependencies
+Docker provider `kreuzwerker/docker` v3.9.0 was installed successfully.
+
+### 2. Create the Terraform Plan
 
 ```bash
-npm ci
+terraform plan
 ```
 
-### 3. Run Tests
+Result:
+
+```text
+Plan: 1 to add, 0 to change, 0 to destroy.
+```
+
+### 3. Apply the Configuration
 
 ```bash
-npm test
+terraform apply
 ```
 
-### 4. Start the Application
+Enter:
+
+```text
+yes
+```
+
+Result:
+
+```text
+Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
+```
+
+### 4. Check Terraform State
 
 ```bash
-npm start
+terraform state list
 ```
 
-The application will be available at:
+Result:
 
-* **Application:** http://localhost:3000
-* **Health Check:** http://localhost:3000/health
-
-## Run with Docker
-
-### 1. Build the Docker Image
-
-```bash
-docker build -t nodejs-demo-app .
+```text
+docker_container.nodejs_app
 ```
 
-### 2. Start a Container
-
-```bash
-docker run -d --name nodes-test -p 3000:3000 nodejs-demo-app
-```
-
-### 3. Verify the Container
-
-Check whether the container is running:
+### 5. Verify the Docker Container
 
 ```bash
 docker ps
 ```
 
-View the application logs:
-
-```bash
-docker logs nodes-test
-```
-
-Check the container's health endpoint:
-
-```bash
-curl http://localhost:3000/health
-```
-
-To stop the container:
-
-```bash
-docker stop nodes-test
-```
-
-To remove the container:
-
-```bash
-docker rm nodes-test
-```
-
-If the container name `nodes-test` is already in use, choose a different name or inspect the existing container before removing it.
-
-## Docker Hub
-
-The GitHub Actions workflow publishes the Docker image to the following public repository:
-
-**Docker Hub:** https://hub.docker.com/r/sakthi2300/nodejs-demo-app
-
-**Image:** `sakthi2300/nodejs-demo-app:latest`
-
-### Pull the Published Image
-
-```bash
-docker pull sakthi2300/nodejs-demo-app:latest
-```
-
-### Run the Published Image
-
-```bash
-docker run -d --name nodes-test -p 3000:3000 sakthi2300/nodejs-demo-app:latest
-```
-
-The application will be accessible at http://localhost:3000.
-
-> Note: The `latest` tag assumes that the GitHub Actions workflow publishes the image with that tag.
-
-## GitHub Actions Configuration
-
-The CI/CD workflow is defined in:
+The Terraform-managed container was:
 
 ```text
-.github/workflows/main.yml
+terraform-nodejs-app
 ```
 
-The workflow is configured to execute automatically when code is pushed to the `main` branch.
+with:
 
-### Required GitHub Secrets
+```text
+0.0.0.0:3001->3000/tcp
+```
 
-Configure the following secrets in:
+### 6. Test the Application
 
-**GitHub → Repository → Settings → Secrets and variables → Actions**
+Open:
 
-| Secret               | Description             |
-| -------------------- | ----------------------- |
-| `DOCKERHUB_USERNAME` | Docker Hub username     |
-| `DOCKERHUB_TOKEN`    | Docker Hub access token |
+```text
+http://localhost:3001
+```
 
-These secrets allow GitHub Actions to authenticate with Docker Hub without exposing credentials in the source code.
+The application returned:
 
-**Security:** Never commit passwords, access tokens, or other sensitive credentials to the repository.
+```text
+Hello! Node.js CI/CD is working.
+```
 
-## Repository Links
+### 7. Destroy the Infrastructure
 
-* **GitHub Repository:** https://github.com/sakthi2300/nodejs-demo-app
-* **GitHub Actions:** https://github.com/sakthi2300/nodejs-demo-app/actions
-* **Docker Hub:** https://hub.docker.com/r/sakthi2300/nodejs-demo-app
+```bash
+terraform destroy
+```
 
-## Key Outcomes
+Enter:
 
-* Automated testing through GitHub Actions.
-* Docker image creation using a Dockerfile.
-* Secure Docker Hub authentication using GitHub Secrets.
-* Automated publishing of Docker images to Docker Hub.
-* CI/CD workflow triggered by pushes to the `main` branch.
-* Containerized application execution using Docker.
+```text
+yes
+```
 
-## Deployment Scope
+Result:
 
-This pipeline automates application testing, Docker image building, and publishing to Docker Hub.
+```text
+Destroy complete! Resources: 1 destroyed.
+```
 
-It does not deploy a continuously running application to a cloud hosting environment. The published Docker image can be pulled and run on any compatible Docker host.
+After destruction, `docker ps` showed no running Terraform-managed container and `terraform state list` returned no resources.
 
----
+## Terraform Workflow
 
-**Node.js Demo App | DevOps Internship — Task 1**
+```text
+terraform init
+      |
+      v
+terraform plan
+      |
+      v
+terraform apply
+      |
+      v
+Docker Container Created
+      |
+      v
+terraform state list
+      |
+      v
+Application Test
+      |
+      v
+terraform destroy
+      |
+      v
+Infrastructure Removed
+```
+
+## Task Requirements Completed
+
+- [x] Docker provider configured
+- [x] `main.tf` created
+- [x] `terraform init`
+- [x] `terraform plan`
+- [x] `terraform apply`
+- [x] Terraform state checked
+- [x] Docker container verified
+- [x] Application tested
+- [x] `terraform destroy`
+- [x] GitHub repository created
+
+## Execution Evidence
+
+Recommended screenshots for submission:
+
+1. `terraform init` successful
+2. `terraform plan` showing `Plan: 1 to add, 0 to change, 0 to destroy`
+3. `terraform apply` showing successful creation
+4. `terraform state list`
+5. `docker ps` showing `terraform-nodejs-app`
+6. Browser showing `http://localhost:3001`
+7. `terraform destroy` showing `Destroy complete!`
+
+## Interview Questions
+
+### 1. What is IaC?
+
+Infrastructure as Code (IaC) is the practice of managing and provisioning infrastructure using configuration files instead of manually configuring infrastructure.
+
+### 2. How does Terraform work?
+
+Terraform uses configuration files to define infrastructure. The normal workflow is:
+
+```text
+Configuration
+    |
+terraform init
+    |
+terraform plan
+    |
+terraform apply
+    |
+Infrastructure
+```
+
+### 3. What is a Terraform state file?
+
+Terraform state keeps track of infrastructure resources managed by Terraform. In this task, Terraform tracked:
+
+```text
+docker_container.nodejs_app
+```
+
+### 4. Difference between `terraform plan` and `terraform apply`
+
+`terraform plan` previews the changes Terraform intends to make.
+
+`terraform apply` actually applies those changes and creates or modifies infrastructure.
+
+### 5. What are Terraform providers?
+
+Providers are plugins that allow Terraform to interact with external platforms and services. This task uses the Docker provider:
+
+```text
+kreuzwerker/docker
+```
+
+### 6. What is resource dependency?
+
+A resource dependency is a relationship where one infrastructure resource depends on another resource. Terraform determines the appropriate order for resource operations.
+
+### 7. How do you handle secret variables?
+
+Secrets such as passwords, API keys, and tokens should not be hard-coded or committed to GitHub. They can be handled using Terraform variables, environment variables, secret managers, or CI/CD secret stores.
+
+### 8. Explain the benefits of Terraform.
+
+Terraform provides:
+
+- Infrastructure as Code
+- Repeatable provisioning
+- Version-controlled infrastructure
+- Preview of changes using `terraform plan`
+- Automated infrastructure management
+- Consistent deployments
+- Infrastructure lifecycle management
+
+## Author
+
+**Sakthivel**
+
+DevOps Internship – Task 3
